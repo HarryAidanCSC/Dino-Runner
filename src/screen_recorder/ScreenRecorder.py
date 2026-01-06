@@ -84,7 +84,7 @@ class ScreenRecorder:
 
                 self.monitor = monitor_num
                 self.top = best_loc[1]  # pyright: ignore[reportIndexIssue]
-                self.left = best_loc[2]  # pyright: ignore[reportIndexIssue]
+                self.left = best_loc[0]  # pyright: ignore[reportIndexIssue]
                 self.width = 110
                 self.height = 68
                 self.scale = best_scale
