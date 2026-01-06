@@ -16,7 +16,7 @@ def setup_chrome_macro(
         browser_title (str, optional): Name of the window. Defaults to "Google Chrome".
 
     Raises:
-        RuntimeError: _description_
+        RuntimeError: If Chrome is not open.
     """
     try:
         chrome_windows = gw.getWindowsWithTitle(browser_title)
