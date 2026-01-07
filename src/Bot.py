@@ -9,6 +9,7 @@ import keyboard
 from FrameProcessor import FrameProcessor
 import mss
 import statistics
+import gc
 
 
 class Bot:
@@ -20,7 +21,7 @@ class Bot:
         setup_chrome_macro()
         time.sleep(0.8)
 
-        self.frame_processor = FrameProcessor()
+        self.frame_processor = FrameProcessor(edge_threshold=60)
         self.screen_recorder = ScreenRecorder(
             dino_template_path="assets/template_dino.png",
             replay_template_path="assets/template_replay.png",
@@ -29,8 +30,8 @@ class Bot:
         self.scores = []
 
         # Constants to calculate ROI scaling (pixels)
-        self.SCALE_RATE = 0.15  # Pixels per second
-        self.MAX_DELTA_WIDTH = 20
+        self.SCALE_RATE = 1.3 # Pixels per second
+        self.MAX_DELTA_WIDTH = 140
 
     def play(self) -> None:
         """Play the chrome dino game."""
@@ -65,22 +66,24 @@ class Bot:
                 sct=sct, d_width=width_delta
             )
 
-            if self.frame_processor.should_jump(img):
-                keyboard.press("space")
-                time.sleep(0.03)
-                keyboard.release("space")
-                # time.sleep(0.21)
-                # keyboard.press("down")
-                # time.sleep(0.03)
-                # keyboard.release("down")
+            should_jump,obstacle_height= self.frame_processor.should_jump(img)
+            if should_jump:
+                
+                # If the game is new then always moon jump
+                if obstacle_height < 15 or elapsed_time < 48:
+                    keyboard.press("space")
+                    time.sleep(0.16)
+                    keyboard.release("space")
+                else:
+                    keyboard.press_and_release("space")
                 frames_since_last_jump = 0
 
-            # Update ROI every 10 frames
-            if frame_count % 35 == 0:
+            # Update ROI every 5 frames
+            if frame_count % 5 == 0:
                 width_delta = self._calculate_roi(elapsed_time=elapsed_time)
 
-            # Check if game has finished every 10 frames.
-            if frame_count % 10 == 0:
+            # Check if game has finished every 15 frames.
+            if frame_count % 15 == 0:
                 if self.screen_recorder.is_run_over(sct=sct):
                     break
 
@@ -91,7 +94,10 @@ class Bot:
             frames_since_last_jump += 1
         # Post-round cleanup
         self.scores.append(time.time() - start_time)
-        print(f"Round: {len(self.scores)}: {self.scores[-1]:.0f}")
+        print(f"Round: {len(self.scores)}: {self.scores[-1]:.0f} Vision: {width_delta}")
+        
+        # Force garbage collection to free memory from screen captures
+        gc.collect()
 
     def _calculate_roi(self, elapsed_time: float = 0.0) -> int:
         """Calculate the additional range for the dino based on elapsed time this round.
@@ -102,6 +108,7 @@ class Bot:
         Returns:
             int: Number of pixels to add to the ROI width.
         """
+
         additonal_roi = int(elapsed_time * self.SCALE_RATE)
         new_roi = min(self.MAX_DELTA_WIDTH, additonal_roi)  # type: ignore
         return new_roi
