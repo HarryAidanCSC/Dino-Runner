@@ -119,7 +119,7 @@ class ScreenRecorder:
             self.monitor_num = monitor_num
             self.top = best_loc[1]  # pyright: ignore[reportIndexIssue]
             self.left = best_loc[0] - 1815  # + 55 # pyright: ignore[reportIndexIssue]
-            self.width = 110
+            self.width = 100
             self.height = 56
             self.scale = best_scale
 
@@ -264,6 +264,25 @@ class ScreenRecorder:
             return cv2.cvtColor(img, cv2.COLOR_BGRA2GRAY)
         return img
 
+    def grab_frame_plus_width(self, sct, d_width: int = 0) -> np.ndarray:
+        """Grab a screen frame width addtional width.
+
+        Args:
+            sct (MSSBase): MSS class instance.
+            d_width (int, optional): Width delta (px). Defaults to 0.
+
+        Returns:
+            np.ndarray: Array representation of the frame.
+        """
+
+        # Add width delta
+        custom_monitor = {
+            **self.monitor,  # type:ignore
+            "width": self.monitor["width"] + d_width,  # type:ignore
+        }
+
+        return self.grab_frame(sct, monitor=custom_monitor)
+
     def is_run_over(self, sct, similarity_threshold=0.8) -> bool:
         """Has the run ended? I.e. Has the replay button appeared.
 
@@ -282,15 +301,14 @@ class ScreenRecorder:
 
         custom_monitor = {
             **self.monitor,
-            "left": self.monitor["left"] + 200,
+            "left": self.monitor["left"] + 260,
+            "width": self.monitor["width"] - 39,
             "top": self.monitor["top"] - 25,
             "height": self.monitor["height"] + 10,
         }
         screen_grab = self.grab_frame(sct=sct, greyscale=True, monitor=custom_monitor)
-        # (dleft=200, dwidth=0, dtop=-25, dheight=10)
 
         match_score, _ = self._match_to_template(
             primary_img=screen_grab, comparison_img=self.replay_template, scale=1.0
         )
-        print(match_score)
         return match_score > similarity_threshold
