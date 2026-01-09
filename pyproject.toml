@@ -11,3 +11,5 @@ dependencies = [
     "opencv-python>=4.11.0.86",
     "pygetwindow>=0.0.9",
 ]
+[tool.setuptools]
+packages = ["dino_runner"]
